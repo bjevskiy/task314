@@ -13,6 +13,7 @@ import ru.itmentor.spring.boot_security.demo.service.UserService;
 
 import javax.validation.Valid;
 
+import java.security.Principal;
 import java.util.List;
 
 @Controller
@@ -28,52 +29,33 @@ public class AdminController {
     }
 
     @GetMapping
-    public String showAllUsers(Model model) {
-        model.addAttribute("usersList", userService.getAllUsers());
+    public String showAllUsers(Model model, Principal principal) {
+        model.addAttribute("admin", userService.getUserByName(principal.getName()));
+        model.addAttribute("users", userService.getAllUsers());
+        model.addAttribute("roles", roleService.getAllRoles());
+        model.addAttribute("user", new User());
         return "admin";
     }
 
-    @GetMapping("/newUser")
-    public String createUserForm(Model model) {
-        model.addAttribute("userForm", new User());
-        model.addAttribute("roles", roleService.getAllRoles());
-        return "add-user-form";
-    }
-
-    @PostMapping
-    public String saveUser(@ModelAttribute("userForm") @Valid User userForm,
-                           BindingResult bindingResult,
+    @PostMapping("/create")
+    public String saveUser(@ModelAttribute("user") User user,
                            @RequestParam("authorities") List<String> values) {
-        userForm.setRoles(roleService.getRole(values));
-        if (bindingResult.hasErrors()) {
-            return "add-user-form";
-        }
-        userService.addUser(userForm);
+        user.setRoles(roleService.getRole(values));
+                userService.addUser(user);
         return "redirect:/admin";
     }
 
-    @GetMapping("/update/{id}")
-    public String showFormForUpdate(@PathVariable("id") long id, Model model) {
-        model.addAttribute("user", userService.getUserById(id));
-        model.addAttribute("roles", roleService.getAllRoles());
-        return "update-user-form";
-    }
-
-    @RequestMapping("/updateUser/{id}")
+    @RequestMapping("/update/{id}")
     public String updateUser(
             @PathVariable("id") Long id,
-            @ModelAttribute("user") @Valid User user,
-            BindingResult bindingResult,
+            @ModelAttribute("user") User user,
             @RequestParam("authorities") List<String> values) {
         user.setRoles(roleService.getRole(values));
-        if (bindingResult.hasErrors()) {
-            return "update-user-form";
-        }
         userService.updateUser(id, user);
         return "redirect:/admin";
     }
 
-    @RequestMapping("/deleteUser/{id}")
+    @RequestMapping("/delete/{id}")
     public String deleteUser(@PathVariable("id") long id) {
         userService.deleteUser(id);
         return "redirect:/admin";

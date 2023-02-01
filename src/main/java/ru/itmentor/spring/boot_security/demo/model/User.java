@@ -1,6 +1,8 @@
 package ru.itmentor.spring.boot_security.demo.model;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,13 +24,13 @@ public class User implements UserDetails {
     private long id;
 
     @Column
-    @NotEmpty(message = "Name field cannot be empty")
-    @Size(min = 2, max = 30, message = "Name field must be between 2 and 30 characters")
+ //   @NotEmpty(message = "Name field cannot be empty")
+ //   @Size(min = 2, max = 30, message = "Name field must be between 2 and 30 characters")
     private String name;
 
     @Column
-    @Email(message = "Enter valid email like mail@mail.com", regexp = ".+@.+\\..+")
-    @Size(min = 5, max = 30, message = "Mail field must be between 5 and 30 characters")
+   // @Email(message = "Enter valid email like mail@mail.com", regexp = ".+@.+\\..+")
+  //  @Size(min = 5, max = 30, message = "Mail field must be between 5 and 30 characters")
     private String mail;
 
     @CreationTimestamp
@@ -42,18 +44,21 @@ public class User implements UserDetails {
     private String password;
 
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.REFRESH)
     @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<Role> roles;
 
     public User() {
     }
 
-    public User(String name, String mail, Date creationDate, Date lastModify) {
+    public User(String name, String mail, Date creationDate, Date lastModify, String password, Set<Role> roles) {
         this.name = name;
         this.mail = mail;
         this.creationDate = creationDate;
         this.lastModify = lastModify;
+        this.password = password;
+        this.roles = roles;
     }
 
     @Override
@@ -99,8 +104,9 @@ public class User implements UserDetails {
         this.roles = roles;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public String getRole() {
+        return getRoles().toString().replaceAll("[,\\[\\]]" , "").
+                replaceAll("ROLE_","");
     }
 
     public long getId() {
@@ -141,6 +147,10 @@ public class User implements UserDetails {
 
     public void setLastModify(Date lastModify) {
         this.lastModify = lastModify;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     @Override
